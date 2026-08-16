@@ -124,7 +124,7 @@ public class PracDemo
 
         List<String> testNames;
         try {
-            Path taskFile = Path.of(submission.getBasePath() + "/tasks");
+            Path taskFile = Path.of(submission.getBasePath(), "tasks");
             testNames = Files.readAllLines(taskFile);
         } catch (IOException e) {
             throw new StageException("Unable to find tasks file");

@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,7 +34,7 @@ public abstract class Source {
         if (classPath != null) {
             for (var item : classPath) {
                 if (!this.classPath.isEmpty()) {
-                    this.classPath += ":";
+                    this.classPath += File.pathSeparator;
                 }
                 this.classPath += Paths.get(item).toAbsolutePath();
             }
@@ -111,19 +112,19 @@ public abstract class Source {
     }
 
     public String getSrcBuildPath() {
-        return basePath + "/build/classes/";
+        return Path.of(basePath, "build","classes").toString();
     }
 
     public String getSrcFolder() {
-        return basePath + "/src";
+        return Path.of(basePath, "src").toString();
     }
 
     public String getTestBuildPath() {
-        return basePath + "/build/test/";
+        return Path.of(basePath, "build", "test").toString();
     }
 
     public String getTestFolder() {
-        return basePath + "/test";
+        return Path.of(basePath, "test").toString();
     }
 
     public List<FileSourceFile> getSrcJavaFiles() throws IOException {
@@ -173,15 +174,14 @@ public abstract class Source {
      * @return The name of the class
      */
     public static String getClassName(String filePath) {
-        if (filePath.startsWith("/src/")) {
-            filePath = filePath.replace("/src/", "");
+        Path path = Path.of(filePath);
+
+        if (path.startsWith("src") || path.startsWith("test")) {
+            filePath = path.subpath(1, path.getNameCount()).toString();
         }
-        if (filePath.startsWith("/test/")) {
-            filePath = filePath.replace("/test/", "");
-        }
+
         return filePath
             .replace(".java", "")
-            .replace("/", ".")
             .replace(File.separator, ".");
     }
 
@@ -222,12 +222,12 @@ public abstract class Source {
 
     private SourceLoader getSourceLoader(String directory) throws IOException {
         URL[] urls = Arrays
-            .stream(classPath.split(":"))
+            .stream(classPath.split(Pattern.quote(File.pathSeparator)))
             .filter(e -> !e.isEmpty())
             .map(e -> {
                 try {
-                    return new URI("file://" + e).toURL();
-                } catch (MalformedURLException | URISyntaxException ex) {
+                    return new File(e).toURI().toURL();
+                } catch (MalformedURLException ex) {
                     throw new RuntimeException(ex);
                 }
             })

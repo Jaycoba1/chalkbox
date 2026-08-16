@@ -7,6 +7,7 @@ import chalkbox.source.Submission;
 import chalkbox.stages.*;
 import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
@@ -176,7 +177,7 @@ public class CodeStyle
         List<String> args = new ArrayList<>();
         for (String s : excluded) {
             args.add("-e");
-            args.add(srcFolder + "/" + s);
+            args.add(Path.of(srcFolder, s).toString());
         }
         return args;
     }

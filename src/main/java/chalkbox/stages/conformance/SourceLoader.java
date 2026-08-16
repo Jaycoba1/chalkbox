@@ -32,7 +32,7 @@ public class SourceLoader extends ClassLoader {
         this.classDirectory = file;
         this.files = new ArrayList<>();
         for (String fileName : loader.loadFiles(file)) {
-            this.files.add(fileName.replace("/", "."));
+            this.files.add(fileName.replace(File.separator, "."));
         }
     }
 

@@ -52,7 +52,7 @@ public class TLC
         var result = new Result(getName()).setOutputFormat("md");
         result.setMaxScore(weighting);
 
-        var codePath = Path.of(submission.getBasePath() + "/" + tlaPath);
+        var codePath = Path.of(submission.getBasePath(), tlaPath);
         if (Files.notExists(codePath)) {
             return StageResult.fromOverview(
                 result
@@ -65,7 +65,7 @@ public class TLC
         }
 
         var tmpConfigPath = Path.of(
-            submission.getBasePath() + "/" + configPath
+            submission.getBasePath(), configPath
         );
 
         List<String> processArgs = new ArrayList<>();
