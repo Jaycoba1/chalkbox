@@ -5,40 +5,69 @@ debug: true
 name: CSSE2002 - Assignment 2
 
 submission:
-  path: test/resources/csse2002/submission/
-  # Extra items for the classpath
+  path: ./autograder/submission/
+  # Extra items for the classpath, if they are relative then they will be relative to the submission path
   classPath:
-    - test/resources/csse2002/lib/junit-4.12.jar
+    - lib/checkstyle-10.14.1-all.jar
+    - lib/hamcrest-core-1.3.jar
+    - lib/junit-4.13.1.jar
+    - lib/engine.jar
 
 solution:
-  path: test/resources/csse2002/solutions/correct/
-  # Extra items for the classpath
+  path: solutions/correct/
+  # Extra items for the classpath, if they are relative then they will be relative to the solution path
   classPath:
-    - test/resources/csse2002/lib/junit-4.12.jar
+    - lib/checkstyle-10.14.1-all.jar
+    - lib/hamcrest-core-1.3.jar
+    - lib/junit-4.13.1.jar
+    - lib/engine.jar
 
-output:
-  results/results.json
+output: /autograder/results/results.json
 
 codestyle:
+  jar: lib/checkstyle-10.14.1-all.jar
+  config: checkstyle_markingaid.xml
   # How much out of 100 is the codestyle worth
   weighting: 10
   # How much out of the weighting to reduce per infraction
   penalty: 1
   # Which files to exclude from the checkstyle
   excluded:
-    - ./src/tms/display/*
+    - Main.java
+    - builder/inventory/
+    - builder/entities/resources/
+    - builder/ui/
+    - builder/player/
+    - builder/GameState.java
+    - builder/JavaBeanGameState.java
+
+markingAidCheckstyle:
+  jar: lib/checkstyle-10.14.1-all.jar
+  config: checkstyle_markingaid.xml
+
+markingAidSpotBugs:
+  jar: lib/spot_bugs.jar
 
 conformance:
+  # Path globs to be ignored
+  ignored:
+    - ./src/*
 
 functionality:
   # How much out of 100 is the functionality worth
-  weighting: 65
+  weighting: 10
+  # Whether to show test info when the test passes
+  showPassing: false
+  # Whether to just make all the functionality tests visible
+  allVisible: true
 
 mutation:
   # How much out of 100 is the mutation worth
   weighting: 25
   mutationTargets:
-    - tms.*
+    - builder.entities.npc.*
+    - builder.world.*
   testTargets:
     - '*'
-  ignoreTests: []
+  ignoreTests:
+    - '*scenarios.*'

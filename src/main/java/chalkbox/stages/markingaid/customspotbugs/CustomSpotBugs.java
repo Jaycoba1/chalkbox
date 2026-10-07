@@ -16,6 +16,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
+import org.github.gestalt.config.exceptions.GestaltException;
 import org.github.gestalt.config.reflect.TypeCapture;
 
 /**
@@ -29,8 +31,9 @@ public class CustomSpotBugs
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private String jar;
-    private List<String> plugins;
-    private SpotBugsExclusions spotBugsExclusions;
+    private List<String> dependencies;
+    private List<String> pluginsToInclude;
+    private String bugsToIncludeFile;
 
     public CustomSpotBugs() {
         super("Custom Spotbugs Code Analysis");
@@ -41,13 +44,15 @@ public class CustomSpotBugs
      */
     public CustomSpotBugs(
             String jar,
-            List<String> plugins,
-            SpotBugsExclusions spotBugsExclusions
+            List<String> dependencies,
+            String bugsToIncludeFile,
+            List<String> pluginsToInclude
     ) {
         this();
         this.jar = jar;
-        this.plugins = plugins;
-        this.spotBugsExclusions = spotBugsExclusions;
+        this.dependencies = dependencies;
+        this.bugsToIncludeFile = bugsToIncludeFile;
+        this.pluginsToInclude = pluginsToInclude;
     }
 
     public StageResult run(Submission submission) throws StageException {
@@ -80,42 +85,29 @@ public class CustomSpotBugs
         processArgs.add("-jar");
         processArgs.add(jar);
 
-        // If you want to add a new detector follow spotbugs instructors and create plugin and add to list
-        if (!plugins.isEmpty()) {
+        if (pluginsToInclude != null && !pluginsToInclude.isEmpty()) {
             processArgs.add("-pluginList");
             processArgs.add(
-                    String.join(File.pathSeparator, plugins)
+                    String.join(File.pathSeparator, pluginsToInclude)
             );
         }
 
-        // add exclusion XML file
-        if (!spotBugsExclusions.noExclusions()) {
-            processArgs.add("-exclude");
-
-            Path excludeFile;
-
-            // todo: Ensure temporarily created xml file is destroyed
-            try {
-                excludeFile = Files.createTempFile(
-                        "spotbugs-exclude-",
-                        ".xml"
-                );
-
-                Files.writeString(
-                        excludeFile,
-                        generateExcludeXml(spotBugsExclusions)
-                );
-            } catch (IOException e) {
-                throw new StageException(
-                        "Failed to create SpotBugs exclusion filter: " + e.getMessage()
-                );
-            }
-            processArgs.add(excludeFile.toString());
+        if (bugsToIncludeFile != null && bugsToIncludeFile != "") {
+            processArgs.add("-include");
+            processArgs.add(bugsToIncludeFile);
         }
 
-        processArgs.add("-auxclasspath");
-        processArgs.add(submission);
-        // todo: Check if processArgs.add(-project) tag is needed
+        if (dependencies != null && !dependencies.isEmpty()) {
+            processArgs.add("-auxclasspath");
+            processArgs.add(
+                    dependencies.stream()
+                            .map(Paths::get)
+                            .map(Path::toString)
+                            .collect(Collectors.joining(File.pathSeparator))
+            );
+        }
+
+        // project to analyse
         processArgs.add(submission.getSrcBuildPath().toString());
 
         logger
@@ -126,14 +118,14 @@ public class CustomSpotBugs
         ProcessExecution process = null;
         try {
             process =
-                    Execution.runProcess(20000, processArgs.toArray(String[]::new));
+                    Execution.runProcess(200000, processArgs.toArray(String[]::new));
         } catch (IOException | TimeoutException e) {
             throw new RuntimeException(e);
         }
 
-        var checkstyleError = process.getError();
-        if (!checkstyleError.isEmpty()) {
-            throw new StageException(checkstyleError);
+        var spotbugsError = process.getError();
+        if (!spotbugsError.isEmpty()) {
+            throw new StageException(spotbugsError);
         }
 
         var checkstyleOutput = process.getOutput();
@@ -143,123 +135,54 @@ public class CustomSpotBugs
                 .filter(n ->
                         !n.contains("Starting audit") && !n.contains("Audit done")
                 )
-                .map(n -> n.replace("[WARN] ", "❌ "))
                 .map(n -> n.replace(submission.getBasePath(), ""))
+                .map(n -> n.replaceFirst("^\\S+\\s+\\S+\\s+\\S+:\\s*", ""))
+                .map(n -> n.replaceFirst("\\s+At\\s+.*$", ""))
                 .collect(Collectors.joining("\n"));
 
+        formattedOutput = formattedOutput.replaceAll("[ \\t]+", " ");
+
         result.appendOutput(
-                String.format(
-                        """
-                        Following violation were found:
-                        =============
-                        %s
-                        """,
-                        formattedOutput
-                )
+                    formattedOutput
         );
         return StageResult.fromOverview(result);
     }
 
 
-    private String generateExcludeXml(SpotBugsExclusions exclusions) {
-        StringBuilder xml = new StringBuilder();
-
-        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xml.append("<FindBugsFilter>\n");
-
-        generateClassExclusions(exclusions.classes(), xml);
-        generatePatternExclusions(exclusions.patterns(), xml);
-        generateCodeExclusions(exclusions.codes(), xml);
-        generateCategoryExclusions(exclusions.categories(), xml);
-
-        xml.append("</FindBugsFilter>\n");
-
-        return xml.toString();
-    }
-
-    private void generateClassExclusions(
-            List<String> classes,
-            StringBuilder xml
-    ) {
-        for (String className : classes) {
-            xml.append("""
-                <Match>
-                    <Class name="%s"/>
-                </Match>
-                """.formatted(className));
-        }
-    }
-
-    private void generatePatternExclusions(
-            List<String> patterns,
-            StringBuilder xml
-    ) {
-        for (String pattern : patterns) {
-            xml.append("""
-                <Match>
-                    <Bug pattern="%s"/>
-                </Match>
-                """.formatted(pattern));
-        }
-    }
-
-    private void generateCodeExclusions(
-            List<String> codes,
-            StringBuilder xml
-    ) {
-        for (String code : codes) {
-            xml.append("""
-                <Match>
-                    <Bug code="%s"/>
-                </Match>
-                """.formatted(code));
-        }
-    }
-
-    private void generateCategoryExclusions(
-            List<String> categories,
-            StringBuilder xml
-    ) {
-        for (String category : categories) {
-            xml.append("""
-                <Match>
-                    <Bug category="%s"/>
-                </Match>
-                """.formatted(category));
-        }
-    }
-
-    /**
-     * Helper method that is mainly used to extract configuration list else returns empty list mainly for spotbugs
-     * filter file
-     */
-    private List<String> getConfigOrEmpty(
-            Config config,
-            String path
-    ) {
+    private <T> T getConfigOrNull(Config config, String path, Class<T> klass) {
         try {
-            return config.getConfig(
-                    path,
-                    new TypeCapture<List<String>>() {}
-            );
+            return config.getConfig(path, klass);
         } catch (ConfigException e) {
-            return List.of();
+            return null;
         }
     }
 
-    // todo: Figure out how to list excluded classes. Odds are this will be in out/and same structure as .java files
+    private <T> T getConfigOrNull(Config config, String path, TypeCapture<T> klass) {
+        try {
+            return config.getConfig(path, klass);
+        } catch (ConfigException e) {
+            return null;
+        }
+    }
+
     @Override
     public Stage build(Config config) {
+
+        try {
+            bugsToIncludeFile =
+                    config.getConfig("markingAidSpotBugs.include", String.class);
+        } catch (ConfigException e) {
+            bugsToIncludeFile = null;
+        }
+
         return new CustomSpotBugs(
-                config.getConfig("customSpotbugs.jar", String.class),
-                config.getConfig("customSpotbugs.plugins",
+                config.getConfig("markingAidSpotBugs.jar", String.class),
+                config.getConfig("submission.classPath",
                         new TypeCapture<List<String>>() {}
-                        ),
-                new SpotBugsExclusions(
-                        getConfigOrEmpty(config, "codestyle.excluded"),
-                        getConfigOrEmpty(config, "customSpotbugs.patterns"),
-                        getConfigOrEmpty(config, "customSpotbugs.codes"),
-                        getConfigOrEmpty(config, "customSpotbugs.categories")
+                ),
+                getConfigOrNull(config, "markingAidSpotBugs.include", String.class),
+                getConfigOrNull(config, "markingAidSpotBugs.plugins",
+                        new TypeCapture<List<String>>() {}
                 )
         );
     }

@@ -40,6 +40,11 @@ extending ChalkBox can be found at
 
 ### Mutation
 
+### Spotbugs
+
+See spot bugs documentation for how to create a plugin. Once you've created a plugin
+add the name of the plugin into config.yml and for injection of any logic add it to the
+detector_config.yml
 
 ## Copyright
 

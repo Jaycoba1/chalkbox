@@ -130,16 +130,7 @@ public class CustomCheckStyle
                 .map(n -> n.replace(submission.getBasePath(), ""))
                 .collect(Collectors.joining("\n"));
 
-        result.appendOutput(
-                String.format(
-                        """
-                        Following violation were found:
-                        =============
-                        %s
-                        """,
-                        formattedOutput
-                )
-        );
+        result.appendOutput(formattedOutput);
         return StageResult.fromOverview(result);
     }
 

@@ -53,7 +53,7 @@ public class Config {
 
     /**
      * Get a config for a path and a given class.
-     * If the config is missing or invalid it will return the default value.
+     * If the config is missing or invalid it will return null.
      *
      * @param path       path to get the config for. The path is not case sensitive.
      * @param klass      class to get the class for.
