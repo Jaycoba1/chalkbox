@@ -43,8 +43,9 @@ extending ChalkBox can be found at
 ### Spotbugs
 
 See spot bugs documentation for how to create a plugin. Once you've created a plugin
-add the name of the plugin into config.yml and for injection of any logic add it to the
-detector_config.yml
+add the name of the plugin into config.yml, for injection of any logic add it to the
+autograder/detector_config.yml, and add the name of the bug to autograder/spot_bugs_include.xml. 
+Create the jar of the new plugin via package mvn and add the jar of the plugin to lib folder.
 
 ## Copyright
 
