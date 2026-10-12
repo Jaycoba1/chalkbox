@@ -135,12 +135,17 @@ public class CustomSpotBugs
                 .filter(n ->
                         !n.contains("Starting audit") && !n.contains("Audit done")
                 )
+                .filter(n -> !n.contains("skip this detector"))
                 .map(n -> n.replace(submission.getBasePath(), ""))
                 .map(n -> n.replaceFirst("^\\S+\\s+\\S+\\s+\\S+:\\s*", ""))
                 .map(n -> n.replaceFirst("\\s+At\\s+.*$", ""))
                 .collect(Collectors.joining("\n"));
 
         formattedOutput = formattedOutput.replaceAll("[ \\t]+", " ");
+
+        formattedOutput = Arrays.stream(formattedOutput.split("\n"))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.joining("\n"));
 
         result.appendOutput(
                     formattedOutput
