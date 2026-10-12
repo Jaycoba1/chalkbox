@@ -130,21 +130,16 @@ public class CustomSpotBugs
 
         var checkstyleOutput = process.getOutput();
 
-        var formattedOutput = Arrays
-                .stream(checkstyleOutput.split("\n"))
+        var formattedOutput = Arrays.stream(checkstyleOutput.split("\n"))
                 .filter(n ->
                         !n.contains("Starting audit") && !n.contains("Audit done")
                 )
                 .filter(n -> !n.contains("skip this detector"))
                 .map(n -> n.replace(submission.getBasePath(), ""))
+                .map(n -> n.replaceAll("[ \t]+", " ").strip())
+                .sorted(String.CASE_INSENSITIVE_ORDER)
                 .map(n -> n.replaceFirst("^\\S+\\s+\\S+\\s+\\S+:\\s*", ""))
                 .map(n -> n.replaceFirst("\\s+At\\s+.*$", ""))
-                .collect(Collectors.joining("\n"));
-
-        formattedOutput = formattedOutput.replaceAll("[ \\t]+", " ");
-
-        formattedOutput = Arrays.stream(formattedOutput.split("\n"))
-                .sorted(String.CASE_INSENSITIVE_ORDER)
                 .collect(Collectors.joining("\n"));
 
         result.appendOutput(
