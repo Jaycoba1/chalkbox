@@ -42,10 +42,44 @@ extending ChalkBox can be found at
 
 ### Spotbugs
 
-See spot bugs documentation for how to create a plugin. Once you've created a plugin
-add the name of the plugin into config.yml, for injection of any logic add it to the
-autograder/detector_config.yml, and add the name of the bug to autograder/spot_bugs_include.xml. 
-Create the jar of the new plugin via package mvn and add the jar of the plugin to lib folder.
+
+
+ChalkBox supports static analysis using [SpotBugs](https://spotbugs.github.io/), including both its default detectors and custom detectors implemented through SpotBugs plugins.
+
+#### Configuration
+
+SpotBugs is run through chalk box stage called `customSpotBugs`, which performs additional processing and formatting of the SpotBugs results before they are reported.
+
+To configure SpotBugs, use the following files:
+
+- **`config.yml`** — Add `customSpotBugs` to the configured stages and list the SpotBugs plugins to load.
+- **`spot_bugs_include.xml`** — Specify the bug codes to include in the final results. This file supports both custom bug codes and bug codes from the default SpotBugs detectors. Add or remove entries to customise which detectors' findings are reported.
+- **`detector_config.yml`** — Configure the behaviour of supported custom detectors.
+
+#### Adding a Custom SpotBugs Plugin
+
+Custom detectors can be implemented by following the [SpotBugs plugin development guide](https://spotbugs.readthedocs.io/).
+
+Once a plugin has been created:
+
+1. **Package the plugin:** Build the plugin JAR using Maven.
+2. **Add the JAR:** Place the generated JAR in the `lib` folder.
+3. **Register the plugin:** Add the jar file name to `config.yml` so that `customSpotBugs` includes it in the SpotBugs command-line invocation when the stage runs.
+4. **Include its bug codes:** Add the custom bug codes to `spot_bugs_include.xml` so that the corresponding findings are included in the results.
+5. **Configure the detectors:** If the plugin supports configuration, update `detector_config.yml` as required.
+
+#### Configuring Custom Detectors
+
+Refer to `detector_config.yml` for documentation on configuring individual detectors. For example, `ModularWeightedCouplingDetector` supports configurable thresholds and other options that control how coupling is measured and reported.
+
+#### Creating Variants of Existing Detectors
+
+To create a separate variant of an existing detector, duplicate its implementation and give the detector a unique name. Repackage the plugin using Maven, place the resulting JAR in the `lib` folder, and register the plugin in `config.yml`.
+
+Ensure that any new bug codes are also added to `spot_bugs_include.xml`. If the variant requires separate configuration, update `detector_config.yml` accordingly with the top level being the name of the detector.
+
+This allows multiple versions of a detector to run with different configurations or detection rules.
+
 
 ## Copyright
 
