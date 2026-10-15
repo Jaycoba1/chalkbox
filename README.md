@@ -53,7 +53,7 @@ SpotBugs is run through chalk box stage called `customSpotBugs`, which performs 
 To configure SpotBugs, use the following files:
 
 - **`config.yml`** — Add `customSpotBugs` to the configured stages and list the SpotBugs plugins to load.
-- **`spot_bugs_include.xml`** — Specify the bug codes to include in the final results. This file supports both custom bug codes and bug codes from the default SpotBugs detectors. Add or remove entries to customise which detectors' findings are reported.
+- **`spot_bugs_include.xml`** — Specify the bug codes to include in the final results. This file supports both custom bug codes and bug codes from the default SpotBugs detectors. Add or remove entries to customise which detectors' findings are reported. You can also specify class names for which classes/packages to analyse. See SpotBugs filter files for more details. Can also expand on this with an exclude filter file in the future
 - **`detector_config.yml`** — Configure the behaviour of supported custom detectors.
 
 #### Adding a Custom SpotBugs Plugin
@@ -74,9 +74,9 @@ Refer to `detector_config.yml` for documentation on configuring individual detec
 
 #### Creating Variants of Existing Detectors
 
-To create a separate variant of an existing detector, duplicate its implementation and give the detector a unique name. Repackage the plugin using Maven, place the resulting JAR in the `lib` folder, and register the plugin in `config.yml`.
+To create a separate variant of an existing detector, duplicate its implementation and give the detector a unique name (simply re-name the detector). Repackage the plugin using Maven, place the resulting JAR in the `lib` folder, and register the plugin in `config.yml`.
 
-Ensure that any new bug codes are also added to `spot_bugs_include.xml`. If the variant requires separate configuration, update `detector_config.yml` accordingly with the top level being the name of the detector.
+Ensure that any new bug codes are also added to `spot_bugs_include.xml`.   If the variant requires separate configuration, update `detector_config.yml` accordingly with the top level being the name of the detector.
 
 This allows multiple versions of a detector to run with different configurations or detection rules.
 

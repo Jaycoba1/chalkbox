@@ -47,7 +47,7 @@ public class CustomCheckStyle
     }
 
     public StageResult run(Submission submission) throws StageException {
-        var result = new Result(getName()).setOutputFormat("md");
+        var result = new Result(getName()).setOutputFormat("md").setVisibility(Visibility.HIDDEN);
 
         try {
             var compilation = submission.compileSrc();
